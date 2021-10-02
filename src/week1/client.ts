@@ -1,4 +1,5 @@
 import net from 'net'
+import { parseHTML } from '../week2/parser'
 
 type RequestOptions = {
   host: string
@@ -215,6 +216,8 @@ class TrunkedBodyParser {
         this.current = this.READING_TRUNK
       }
     } else if (this.current === this.READING_TRUNK) {
+      if (this.isFinished) return
+      
       this.content.push(char)
       --this.length
       if (this.length === 0) {
@@ -247,6 +250,8 @@ const main = async () => {
   })
 
   const res = await request.send()
+
+  parseHTML(res.body)
 
   console.log(res)
 }
