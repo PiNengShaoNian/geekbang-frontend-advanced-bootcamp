@@ -22,6 +22,8 @@ type Attribute = {
   value: string
 }
 
+type Specificity = [number, number, number, number]
+
 type Element = {
   type: string
   children: Element[]
@@ -29,6 +31,12 @@ type Element = {
   tagName: string
   parent: null | Element
   content?: string
+  computedStyle?: {
+    [key: string]: {
+      value: string
+      priority: Specificity
+    }
+  }
 }
 
 const EOF = 'EOF'
@@ -77,6 +85,32 @@ const match = (element: Element, selector: string): boolean => {
   return false
 }
 
+const specificity = (selector: string): Specificity => {
+  const ans: Specificity = [0, 0, 0, 0]
+
+  const selectorParts = selector.split(' ')
+
+  for (const part of selectorParts) {
+    if (part[0] === '#') {
+      ++ans[1]
+    } else if (part[0] === '.') {
+      ++ans[2]
+    } else {
+      ++ans[3]
+    }
+  }
+
+  return ans
+}
+
+const compare = (a: Specificity, b: Specificity): number => {
+  if (a[0] - b[0]) return a[0] - b[0]
+  if (a[1] - b[1]) return a[1] - b[1]
+  if (a[2] - b[2]) return a[2] - b[2]
+
+  return a[3] - b[3]
+}
+
 const computeCSS = (element: Element): void => {
   const elements = stack.slice().reverse()
 
@@ -97,6 +131,29 @@ const computeCSS = (element: Element): void => {
 
       if (j >= selectorParts.length) {
         matched = true
+      }
+
+      if (!rule.declarations || !matched) continue
+
+      if (!element.computedStyle) {
+        element.computedStyle = {}
+      }
+
+      for (const d of rule.declarations) {
+        if ('property' in d) {
+          const sp = specificity(rule.selectors?.[0] ?? '')
+          if (!element.computedStyle[d.property!]) {
+            element.computedStyle[d.property!] = {} as any
+          }
+
+          if (!element.computedStyle[d.property!].priority) {
+            element.computedStyle[d.property!].priority = sp
+            element.computedStyle[d.property!].value = d.value!
+          } else if (compare(element.computedStyle[d.property!].priority, sp)) {
+            element.computedStyle[d.property!].priority = sp
+            element.computedStyle[d.property!].value = d.value!
+          }
+        }
       }
     }
   }
