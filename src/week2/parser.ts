@@ -25,7 +25,7 @@ type Attribute = {
 type Element = {
   type: string
   children: Element[]
-  attributes?: Record<string, string>
+  attributes?: { name: string; value: string }[]
   tagName: string
   parent: null | Element
   content?: string
@@ -58,6 +58,50 @@ const addCSSRules = (cssText: string): void => {
   rules.push(...(css.parse(cssText).stylesheet?.rules ?? []))
 }
 
+const match = (element: Element, selector: string): boolean => {
+  if (!selector) return false
+
+  if (selector[0] === '#') {
+    const idAttr = element.attributes?.find((v) => v.name === 'id')
+    if (!idAttr) return false
+
+    return '#' + idAttr.value === selector
+  } else if (selector[0] === '.') {
+    const classAttr = element.attributes?.find((v) => v.name === 'class')
+    if (!classAttr) return false
+
+    return '.' + classAttr.value === selector
+  } else {
+    if (element.tagName === selector) return true
+  }
+  return false
+}
+
+const computeCSS = (element: Element): void => {
+  const elements = stack.slice().reverse()
+
+  for (const rule of rules) {
+    if ('selectors' in rule) {
+      const selectorParts = rule.selectors?.[0]?.split(' ').reverse() ?? []
+      if (!match(element, selectorParts[0])) continue
+
+      let matched = false
+
+      let j = 1
+
+      for (let i = 0; i < elements.length; ++i) {
+        if (match(elements[i], selectorParts[j])) {
+          j++
+        }
+      }
+
+      if (j >= selectorParts.length) {
+        matched = true
+      }
+    }
+  }
+}
+
 const emit = (token: Token): void => {
   const top = stack[stack.length - 1]
 
@@ -65,10 +109,21 @@ const emit = (token: Token): void => {
     const element: Element = {
       type: 'element',
       children: [],
-      attributes: {},
+      attributes: [],
       tagName: token.tagName,
       parent: null,
     }
+
+    if (token.attributes) {
+      for (const x of Object.keys(token.attributes)) {
+        element.attributes?.push({
+          name: x,
+          value: token.attributes[x],
+        })
+      }
+    }
+
+    computeCSS(element)
 
     top.children.push(element)
     element.parent = top
