@@ -1,3 +1,5 @@
+import css, { AtRule, Rule } from 'css'
+
 type char = string
 type MachineState = (c: char) => MachineState
 
@@ -34,6 +36,7 @@ const EOF = 'EOF'
 let currentToken: null | Token = null
 let currentAttribute: null | Attribute = null
 let currentTextNode: null | Element = null
+const rules: Array<Rule | Comment | AtRule> = []
 const stack: Element[] = [
   {
     type: 'document',
@@ -49,6 +52,10 @@ const addAttribute = () => {
     x.attributes = {}
   }
   x.attributes[currentAttribute!.name] = currentAttribute!.value
+}
+
+const addCSSRules = (cssText: string): void => {
+  rules.push(...(css.parse(cssText).stylesheet?.rules ?? []))
 }
 
 const emit = (token: Token): void => {
@@ -75,6 +82,9 @@ const emit = (token: Token): void => {
     if (top.tagName !== token.tagName) {
       throw new Error("Tag start end doesn't match!")
     } else {
+      if (top.tagName === 'style') {
+        addCSSRules(top.children[0].content!)
+      }
       stack.pop()
     }
     currentTextNode = null
@@ -336,5 +346,5 @@ export const parseHTML = (html: string): void => {
 
   state = state(EOF)
 
-  console.log(stack)
+  console.log(rules)
 }

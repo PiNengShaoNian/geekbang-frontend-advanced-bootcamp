@@ -8,6 +8,7 @@
   "dependencies": {
     "@types/jest": "^26.0.12",
     "@types/node": "^14.6.2",
+    "css": "^3.0.0",
     "ts-jest": "^26.5.4"
   },
   "scripts": {
@@ -19,6 +20,7 @@
     "TypeScript"
   ],
   "devDependencies": {
+    "@types/css": "^0.0.33",
     "jest": "^26.4.2",
     "typescript": "^4.4.3"
   }
