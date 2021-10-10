@@ -1,4 +1,5 @@
 import css, { AtRule, Rule } from 'css'
+import { layout } from '../week3/layout'
 
 type char = string
 type MachineState = (c: char) => MachineState
@@ -24,7 +25,7 @@ type Attribute = {
 
 type Specificity = [number, number, number, number]
 
-type Element = {
+export type Element = {
   type: string
   children: Element[]
   attributes?: { name: string; value: string }[]
@@ -36,6 +37,9 @@ type Element = {
       value: string
       priority: Specificity
     }
+  }
+  style?: {
+    [key: string]: number | string | null
   }
 }
 
@@ -197,6 +201,7 @@ const emit = (token: Token): void => {
       if (top.tagName === 'style') {
         addCSSRules(top.children[0].content!)
       }
+      layout(top)
       stack.pop()
     }
     currentTextNode = null
