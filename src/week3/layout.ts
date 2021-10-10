@@ -120,4 +120,75 @@ export const layout = (element: Element) => {
     crossBase = 0
     corssSign = 1
   }
+
+  let isAutoMainSize = false
+
+  if (!elementStyle[mainSize]) {
+    elementStyle[mainSize] = 0
+
+    for (let i = 0; i < items.length; ++i) {
+      const item = items[i]
+      const itemStyle = item.style ?? {}
+
+      //   if(itemStyle[mainSize] !== null || itemStyle[mainSize])
+    }
+
+    isAutoMainSize = true
+  }
+
+  let flexLine: Array<Element> & {
+    mainSpace: number
+    crossSpace: number
+  } = [] as any
+  const flexLines = []
+
+  let mainSpace = elementStyle[mainSize] as number
+  let crossSpace = 0
+
+  for (let i = 0; i < items.length; ++i) {
+    const item = items[i]
+    const itemStyle = getStyle(item)
+
+    if (itemStyle[mainSize] === null) {
+      itemStyle[mainSize] = 0
+    }
+
+    if (itemStyle.flex) {
+      flexLine.push(item)
+    } else if (elementStyle.flexWrap === 'nowrap' && isAutoMainSize) {
+      mainSpace -= itemStyle[mainSize] as number
+
+      if (itemStyle[crossSize] !== null && itemStyle[crossSize] !== undefined) {
+        crossSpace = Math.max(crossSpace, itemStyle[crossSize] as number)
+      }
+
+      flexLine.push(item)
+    } else {
+      if (
+        (itemStyle[mainSize] as number) > (elementStyle[mainSize] as number)
+      ) {
+        itemStyle[mainSize] = elementStyle[mainSize]
+      }
+
+      if (mainSpace < (itemStyle[mainSize] as number)) {
+        flexLine.mainSpace = mainSpace
+        flexLine.crossSpace = crossSpace
+        flexLines.push(flexLine)
+        flexLine = [item] as any
+        mainSpace = elementStyle[mainSize] as number
+        crossSpace = 0
+      } else {
+        flexLine.push(item)
+      }
+
+      if (typeof itemStyle[crossSize] === 'number') {
+        crossSpace = Math.max(crossSpace, itemStyle[crossSize] as number)
+      }
+
+      mainSpace -= itemStyle[mainSize] as number
+    }
+
+    flexLine.mainSpace = mainSpace
+    flexLine.crossSpace = crossSpace
+  }
 }
