@@ -67,7 +67,7 @@ class XRegExp {
   }
 }
 
-const scan = (str: string): void => {
+export const scan = function* (str: string) {
   let regexp = new XRegExp(
     {
       InputElement: '<WhiteSpace>|<LineTerminator>|<Comments>|<Token>',
@@ -89,28 +89,50 @@ const scan = (str: string): void => {
   )
 
   while (regexp.lastIndex < str.length) {
-    const r = regexp.exec(str)
-
-    if (r) {
-      r.input = ''
+    const r = regexp.exec(str) as RegExpExecArray & {
+      [key: string]: string
     }
 
-    document.write(r?.[0] ?? '')
-    if (!r?.[0].length) break
+    if (!r) continue
+
+    if (r.WhiteSpace) {
+    } else if (r.LineTerminator) {
+    } else if (r.Comments) {
+    } else if (r.NumbericLiteral) {
+      yield {
+        type: 'NumbericLiteral',
+        value: r[0],
+      }
+    } else if (r.BooleanLiteral) {
+      yield {
+        type: 'BooleanLiteral',
+        value: r[0],
+      }
+    } else if (r.StringLiteral) {
+      yield {
+        type: 'StringLiteral',
+        value: r[0],
+      }
+    } else if (r.NullLiteral) {
+      yield {
+        type: 'NullLiteral',
+        value: null,
+      }
+    } else if (r.Identifier) {
+      yield {
+        type: 'Identifier',
+        name: r[0],
+      }
+    } else if (r.Punctuator) {
+      yield {
+        type: r[0],
+      }
+    } else {
+      throw new Error('unexpected token ' + r[0])
+    }
+  }
+
+  yield {
+    type: 'EOF',
   }
 }
-
-scan(`
-for (let i = 0; i < 3; ++i) {
-    for (let j = 0; j < 3; ++j) {
-      let cell = document.createElement('div')
-      cell.classList.add('cell')
-      cell.innerText =
-        pattern[i * 3 + j] == 2 ? 'X' : pattern[i * 3 + j] === 1 ? 'O' : ''
-      cell.addEventListener('click', () => userMove(j, i))
-      board.appendChild(cell)
-    }
-  
-    board.appendChild(document.createElement('br'))
-  }
-`)
