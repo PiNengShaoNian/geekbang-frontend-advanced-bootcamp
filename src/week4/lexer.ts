@@ -75,13 +75,14 @@ export const scan = function* (str: string) {
       LineTerminator: /\n/,
       Comments: /\/\*(?:[^*]|\*[^\/])*\*\/|\/\/[^\n]*/,
       Token: '<Literal>|<Keywords>|<Identifier>|<Punctuator>',
-      Literal: '<NumberLiteral>|<BooleanLiteral>|<StringLiteral>|<NullLiteral>',
-      NumberLiteral: /(?:[1-9][0-9]*|0)(?:\.[0-9]*)?|\.[0-9]+/,
+      Literal:
+        '<NumericLiteral>|<BooleanLiteral>|<StringLiteral>|<NullLiteral>',
+      NumericLiteral: /(?:[1-9][0-9]*|0)(?:\.[0-9]*)?|\.[0-9]+/,
       BooleanLiteral: /true|false/,
       StringLiteral: /\"(?:[^"\n]|\\[\s\S]*)\"|\'(?:[^'\n]|\\[\s\S])*\'/,
       NullLiteral: /null/,
       Identifier: /[a-zA-Z_$][a-zA-Z0-9_$]*/,
-      Keywords: /if|else|for|function|let/,
+      Keywords: /if|else|for|function|let|var/,
       Punctuator: /\+|\,|\?|\:|\{|\}|\.|\(|\)|\=|\<|\+\+|\=\=|\=\>|\*|\[|\]|;/,
     },
     'g',
@@ -98,9 +99,9 @@ export const scan = function* (str: string) {
     if (r.WhiteSpace) {
     } else if (r.LineTerminator) {
     } else if (r.Comments) {
-    } else if (r.NumbericLiteral) {
+    } else if (r.NumericLiteral) {
       yield {
-        type: 'NumbericLiteral',
+        type: 'NumericLiteral',
         value: r[0],
       }
     } else if (r.BooleanLiteral) {
@@ -123,6 +124,10 @@ export const scan = function* (str: string) {
         type: 'Identifier',
         name: r[0],
       }
+    } else if (r.Keywords) {
+      yield {
+        type: r[0],
+      }
     } else if (r.Punctuator) {
       yield {
         type: r[0],
@@ -136,3 +141,18 @@ export const scan = function* (str: string) {
     type: 'EOF',
   }
 }
+
+const source = `
+for (let i = 0; i < 3; ++i) {
+    for (let j = 0; j < 3; ++j) {
+      let cell = document.createElement('div')
+      cell.classList.add('cell')
+      cell.innerText =
+        pattern[i * 3 + j] == 2 ? 'X' : pattern[i * 3 + j] === 1 ? 'O' : ''
+      cell.addEventListener('click', () => userMove(j, i))
+      board.appendChild(cell)
+    }
+  
+    board.appendChild(document.createElement('br'))
+  }
+`
