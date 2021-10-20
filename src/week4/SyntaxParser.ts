@@ -42,19 +42,10 @@ interface SyntaxState {
   [key: string]: any
 }
 
-const idToState = new Map<number, SyntaxState>()
-const stateToId = new Map<SyntaxState, number>()
-let id = 0
-
-const addState = (state: SyntaxState) => {
-  if (stateToId.has(state)) return
-  idToState.set(id, state)
-  stateToId.set(state, id)
-  ++id
-}
+const visited = new Map<string, SyntaxState>()
 
 const closure = (state: SyntaxState) => {
-  addState(state)
+  visited.set(JSON.stringify(state), state)
   const queue: string[] = []
   for (const symbol of Object.keys(state)) {
     if (symbol.startsWith('$')) continue
@@ -87,7 +78,9 @@ const closure = (state: SyntaxState) => {
   for (const symbol of Object.keys(state)) {
     if (symbol.startsWith('$')) return
 
-    if (!stateToId.has(state[symbol])) {
+    if (visited.has(JSON.stringify(state[symbol]))) {
+    //   state[symbol] = visited.get(JSON.stringify(state[symbol]))
+    } else {
       closure(state[symbol])
     }
   }
@@ -115,7 +108,7 @@ const parse = (source: string) => {
     let state = stack[stack.length - 1]
 
     if ((symbol.type as string) in state) {
-      stack.push(symbol)
+      stack.push(state[symbol.type!])
     } else {
       reduce()
       shift(symbol)
